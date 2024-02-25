@@ -1,0 +1,59 @@
+---
+- name: Resize filesystem to full disk size
+  hosts: all-in-one
+  become: true
+  handlers:
+    - name: Resize filesystem
+      ansible.builtin.command:
+        cmd: "xfs_growfs /"
+      register: xfs_growfs_command
+      changed_when: "'data blocks changed' in xfs_growfs_command.stdout"
+  tasks:
+    - name: Install growpart utility
+      ansible.builtin.package:
+        name: "cloud-utils-growpart"
+        state: "present"
+    - name: Resize Partition
+      ansible.builtin.command:
+        cmd: "growpart
+              {{ (ansible_mounts | selectattr('mount', 'eq', '/') | map(attribute='device') | first)[:-1] }}
+              {{ (ansible_mounts | selectattr('mount', 'eq', '/') | map(attribute='device') | first)[-1:] }}" # e.g. "growpart /dev/vda 5"
+      register: growpart_command
+      changed_when: "'CHANGED' in growpart_command.stdout"
+      failed_when:
+        - "'NOCHANGE' not in growpart_command.stdout"
+        - "growpart_command.rc != 0"
+      notify: "Resize filesystem"
+
+- name: Install vanity packages
+  hosts: all-in-one
+  become: true
+  handlers:
+  tasks:
+    - name: Install vanity packages
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: "present"
+      loop: ["bash-completion", "vim"]
+    - name: Upgrade all packages # noqa package-latest
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+
+- name: Podman Roles
+  hosts: all-in-one
+  become: true
+  pre_tasks:
+    - name: Create Podman User
+      ansible.builtin.user:
+        name: "podman"
+        create_home: false
+        password: "!" # Disabled
+        system: true
+  roles:
+    - fedora.linux_system_roles.podman
+  post_tasks:
+    - name: Generate Podman completion scripts
+      ansible.builtin.command:
+        cmd: "podman completion -f /etc/bash_completion.d/podman bash"
+        creates: "/etc/bash_completion.d/podman"
