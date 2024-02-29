@@ -1,3 +1,47 @@
 ---
 podman_create_host_directories: true
 podman_run_as_user: "podman"
+
+podman_kube_specs:
+  - state: started
+    kube_file_content:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: keycloak
+      spec:
+        containers:
+          - name: keycloak
+            image: quay.io/keycloak/keycloak:23.0
+            ports:
+              - containerPort: 8080
+                hostPort: 8080
+            env:
+              - name: KEYCLOAK_ADMIN
+                value: admin
+              - name: KEYCLOAK_ADMIN_PASSWORD
+                value: admin
+              - name: KC_DB
+                value: postgres
+              - name: KC_DB_URL
+                value: jdbc:postgresql://postgres/keycloak
+              - name: KC_DB_USERNAME
+                value: admin
+              - name: KC_DB_PASSWORD
+                value: admin
+          - name: postgresql
+            image: docker.io/postgres:16.2-alpine
+            volumeMounts:
+              - mountPath: /var/lib/postgresql/data
+                name: postgres-volume
+            env:
+              - name: POSTGRES_USER
+                value: admin
+              - name: POSTGRES_PASSWORD
+                value: admin
+              - name: POSTGRES_DB
+                value: keycloak
+        volumes:
+          - name: postgres-volume
+            hostPath:
+              path: /home/podman/keycloak_podman/volumes/postgres

@@ -46,10 +46,10 @@
   pre_tasks:
     - name: Create Podman User
       ansible.builtin.user:
-        name: "podman"
-        create_home: false
+        name: "{{ podman_run_as_user }}"
+        create_home: true # Hosts mount points for container
         password: "!" # Disabled
-        system: true
+        system: false # Needs subuid and subgid
   roles:
     - fedora.linux_system_roles.podman
   post_tasks:
