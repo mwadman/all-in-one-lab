@@ -74,6 +74,7 @@
         authority_cert_issuer: "DNS:localhost" # Keycloak fails if issuer DN is empty
         authority_cert_serial_number: "1"
       register: selfsigned_csr
+      changed_when: false
     - name: Self-sign certificate from CSR
       community.crypto.x509_certificate:
         path: "/home/{{ podman_run_as_user }}/certs/selfsigned.pem"
