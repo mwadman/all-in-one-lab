@@ -44,12 +44,44 @@
   hosts: all-in-one
   become: true
   pre_tasks:
+    - name: Install prerequisite packages
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: "present"
+      loop: ["python3-cryptography"]
     - name: Create Podman User
       ansible.builtin.user:
         name: "{{ podman_run_as_user }}"
         create_home: true # Hosts mount points for container
         password: "!" # Disabled
         system: false # Needs subuid and subgid
+    - name: Create certificate directory
+      ansible.builtin.file:
+        path: "/home/{{ podman_run_as_user }}/certs"
+        state: "directory"
+        owner: "{{ podman_run_as_user }}"
+        group: "{{ podman_run_as_user }}"
+        mode: "0755"
+    - name: Create private key for certificate
+      community.crypto.openssl_privatekey:
+        path: "/home/{{ podman_run_as_user }}/certs/selfsigned.key"
+        owner: "{{ podman_run_as_user }}"
+        mode: "0644"
+    - name: Generate CSR for self-signed certificate
+      community.crypto.openssl_csr_pipe:
+        privatekey_path: "/home/{{ podman_run_as_user }}/certs/selfsigned.key"
+        common_name: "{{ ansible_hostname }}.{{ ansible_dns.search[0] }}"
+        authority_cert_issuer: "DNS:localhost" # Keycloak fails if issuer DN is empty
+        authority_cert_serial_number: "1"
+      register: selfsigned_csr
+    - name: Self-sign certificate from CSR
+      community.crypto.x509_certificate:
+        path: "/home/{{ podman_run_as_user }}/certs/selfsigned.pem"
+        csr_content: "{{ selfsigned_csr.csr }}"
+        privatekey_path: "/home/{{ podman_run_as_user }}/certs/selfsigned.key"
+        provider: "selfsigned"
+        owner: "{{ podman_run_as_user }}"
+        mode: "0644"
   roles:
     - fedora.linux_system_roles.podman
   post_tasks:

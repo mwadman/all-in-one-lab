@@ -1,0 +1,7 @@
+---
+keycloak_admin_username: "admin"
+keycloak_admin_password: "admin"
+
+keycloak_postgres_username: "admin"
+keycloak_postgres_password: "admin"
+keycloak_postgres_database: "keycloak"
