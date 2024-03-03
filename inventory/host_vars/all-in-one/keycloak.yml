@@ -6,9 +6,9 @@ keycloak_postgres_username: "admin"
 keycloak_postgres_password: "admin"
 keycloak_postgres_database: "keycloak"
 
-keycloak_podman_host_directories: # Need to set as Postgres container chowns directory to subuid
+keycloak_podman_host_directories: # Container chowns directory to subuid
   /home/vagrant/keycloak_podman/volumes/postgres: # Can't use variables in key names
-    owner: "{{ ansible_facts['getent_passwd'][podman_run_as_user][1] }}69"
+    owner: "{{ (ansible_facts['getent_passwd'][podman_run_as_user][1] | int * 100) + 69 }}" # postgres runs as uid 69
     group: "{{ podman_run_as_user }}"
     mode: "0700"
 keycloak_podman_secrets:
