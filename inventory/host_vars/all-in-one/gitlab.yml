@@ -1,0 +1,49 @@
+---
+gitlab_podman_host_directories: {} # Container chowns directory to subuid
+  # /home/vagrant/gitlab_podman/volumes/gitlab: # Can't use variables in key names
+  #   owner: "{{ (ansible_facts['getent_passwd'][podman_run_as_user][1] | int * 100) + 910 }}" # gitlab runs as uid 910
+  #   group: "{{ (ansible_facts['getent_passwd'][podman_run_as_user][2] | int * 100) + 910 }}" # gitlab runs as gid 910
+  #   mode: "0755"
+gitlab_podman_secrets: []
+gitlab_podman_kube_specs:
+  - state: "started"
+    kube_file_content:
+      apiVersion: "v1"
+      kind: "Pod"
+      metadata:
+        name: "gitlab"
+      spec:
+        containers:
+          - name: "gitlab"
+            image: "docker.io/gitlab/gitlab-ce:16.9.1-ce.0"
+            ports:
+              - containerPort: 9022
+                hostPort: 9022
+              - containerPort: 9080
+                hostPort: 9080
+            env:
+              - name: "GITLAB_OMNIBUS_CONFIG"
+                value: |
+                  external_url 'http://{{ ansible_hostname }}.{{ ansible_dns.search[0] }}:9080';
+                  gitlab_rails['gitlab_shell_ssh_port'] = 9022;
+            volumeMounts:
+              - name: "gitlab-data"
+                mountPath: "/var/opt/gitlab:Z"
+              - name: "gitlab-logs"
+                mountPath: "/var/log/gitlab:Z"
+              - name: "gitlab-config"
+                mountPath: "/etc/gitlab:Z"
+        volumes:
+          - name: "gitlab-data"
+            hostPath:
+              path: "/home/{{ podman_run_as_user }}/gitlab_podman/volumes/gitlab/data"
+          - name: "gitlab-logs"
+            hostPath:
+              path: "/home/{{ podman_run_as_user }}/gitlab_podman/volumes/gitlab/logs"
+          - name: "gitlab-config"
+            hostPath:
+              path: "/home/{{ podman_run_as_user }}/gitlab_podman/volumes/gitlab/config"
+
+# TODO:
+#  - Gitlab Runner - https://docs.gitlab.com/runner/install/docker.html
+#  - Gitlab Pages - https://docs.gitlab.com/ee/administration/pages/index.html

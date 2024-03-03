@@ -4,15 +4,18 @@ podman_run_as_user: "vagrant" # Maybe "podman" in prod?
 
 podman_host_directories: "{{
   keycloak_podman_host_directories |
-  ansible.builtin.combine(openldap_podman_host_directories)
+  ansible.builtin.combine(openldap_podman_host_directories) |
+  ansible.builtin.combine(gitlab_podman_host_directories)
   }}"
 
 podman_secrets: "{{
   keycloak_podman_secrets +
-  openldap_podman_secrets
+  openldap_podman_secrets +
+  gitlab_podman_secrets
   }}"
 
 podman_kube_specs: "{{
   keycloak_podman_kube_specs +
-  openldap_podman_kube_specs
+  openldap_podman_kube_specs +
+  gitlab_podman_kube_specs
   }}"
