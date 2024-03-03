@@ -75,6 +75,7 @@
         authority_cert_serial_number: "1"
       register: selfsigned_csr
       changed_when: false
+      ignore_errors: "{{ ansible_check_mode }}" # privatekey_path may not exist
     - name: Self-sign certificate from CSR
       community.crypto.x509_certificate:
         path: "/home/{{ podman_run_as_user }}/certs/selfsigned.pem"
@@ -83,6 +84,7 @@
         provider: "selfsigned"
         owner: "{{ podman_run_as_user }}"
         mode: "0644"
+      ignore_errors: "{{ ansible_check_mode }}" # csr_content is not be created by openssl_csr_pipe in check mode
   roles:
     - fedora.linux_system_roles.podman
   post_tasks:
