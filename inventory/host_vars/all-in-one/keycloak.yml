@@ -87,7 +87,8 @@ keycloak_podman_kube_specs:
                 value: "/etc/pki/tls/selfsigned/selfsigned.pem"
             volumeMounts:
               - name: "self-signed-certificate"
-                mountPath: "/etc/pki/tls/selfsigned:Z"
+                mountPath: "/etc/pki/tls/selfsigned:z"
+                readOnly: true
           - name: "postgresql"
             image: "docker.io/postgres:15.6-alpine"
             volumeMounts:
