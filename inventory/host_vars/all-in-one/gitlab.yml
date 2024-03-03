@@ -26,6 +26,27 @@ gitlab_podman_kube_specs:
                 value: |
                   external_url 'http://{{ ansible_hostname }}.{{ ansible_dns.search[0] }}:9080';
                   gitlab_rails['gitlab_shell_ssh_port'] = 9022;
+                  gitlab_rails['omniauth_providers'] = [
+                    {
+                      name: "openid_connect",
+                      label: "Keycloak",
+                      args: {
+                        name: "openid_connect",
+                        scope: ["openid", "profile", "email"],
+                        response_type: "code",
+                        issuer:  "https://all-in-one.lab.vagrant:8443/realms/ldap",
+                        client_auth_method: "query",
+                        discovery: true,
+                        uid_field: "preferred_username",
+                        pkce: true,
+                        client_options: {
+                          identifier: "gitlab",
+                          secret: "abcdefghijklmnopqrstuvwxyz123456",
+                          redirect_uri: "http://{{ ansible_hostname }}.{{ ansible_dns.search[0] }}:9080/users/auth/openid_connect/callback"
+                        }
+                      }
+                    }
+                  ]
             volumeMounts:
               - name: "gitlab-data"
                 mountPath: "/var/opt/gitlab:Z"
@@ -45,5 +66,6 @@ gitlab_podman_kube_specs:
               path: "/home/{{ podman_run_as_user }}/gitlab_podman/volumes/gitlab/config"
 
 # TODO:
+#  - Fix OIDC to Keycloak (needs to trust certificate) - https://docs.gitlab.com/16.9/ee/administration/auth/oidc.html#configure-keycloak
 #  - Gitlab Runner - https://docs.gitlab.com/runner/install/docker.html
 #  - Gitlab Pages - https://docs.gitlab.com/ee/administration/pages/index.html

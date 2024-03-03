@@ -114,3 +114,33 @@ keycloak_podman_kube_specs:
           - name: "self-signed-certificate"
             hostPath:
               path: "/home/{{ podman_run_as_user }}/certs"
+
+keycloak_common:
+  keycloak_url: "https://all-in-one.lab.vagrant:8443"
+  realm: "master"
+  username: "{{ keycloak_admin_username }}"
+  password: "{{ keycloak_admin_password }}"
+  validate_certs: false # Remove in prod
+keycloak_realms:
+  - realm: "ldap"
+keycloak_user_federations:
+  - realm: "ldap"
+    name: "ldap"
+    provider_id: "ldap"
+    authType: "simple"
+    bindCredential: "{{ openldap_readonly_password }}"
+    bindDn: "cn={{ openldap_readonly_username }},dc={{ ansible_dns.search[0] | split('.') | join(',dc=') }}"
+    connectionUrl: "ldap://openldap.dns.podman"
+    rdnLDAPAttribute: "uid"
+    syncRegistrations: true
+    userObjectClasses: "inetOrgPerson"
+    usernameLDAPAttribute: "uid"
+    usersDn: "ou=People,dc={{ ansible_dns.search[0] | split('.') | join(',dc=') }}"
+    uuidLDAPAttribute: "uid"
+keycloak_clients:
+  - realm: "ldap"
+    id: "gitlab"
+    base_url: "http://all-in-one.lab.vagrant:9080"
+    redirect_uris:
+      - "http://all-in-one.lab.vagrant:9080/*"
+    secret: "abcdefghijklmnopqrstuvwxyz123456"

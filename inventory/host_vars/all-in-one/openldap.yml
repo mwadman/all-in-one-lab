@@ -13,8 +13,9 @@ openldap_ldif_content: |
   dn: uid=jsmith,ou=People,dc=lab,dc=vagrant
   changetype: add
   objectClass: inetOrgPerson
-  cn: John Smith
+  cn: John
   sn: Smith
+  mail: jsmith@lab.vagrant
   uid: jsmith
   userpassword: jsmith
 

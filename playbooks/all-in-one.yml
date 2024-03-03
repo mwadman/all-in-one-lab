@@ -110,3 +110,76 @@
       ansible.builtin.command:
         cmd: "podman completion -f /etc/bash_completion.d/podman bash"
         creates: "/etc/bash_completion.d/podman"
+    - name: Keycloak API tasks block
+      block:
+        - name: Create Keycloak realms
+          community.general.keycloak_realm:
+            auth_client_id: "{{ keycloak_common.client_id | default('admin-cli') }}"
+            auth_keycloak_url: "{{ keycloak_common.keycloak_url }}"
+            auth_realm: "{{ keycloak_common.realm }}"
+            auth_username: "{{ keycloak_common.username }}"
+            auth_password: "{{ keycloak_common.password }}"
+            validate_certs: "{{ keycloak_common.validate_certs | default(true) }}"
+            realm: "{{ item.realm }}"
+            id: "{{ item.id | default(item.realm) }}"
+            enabled: "{{ item.enabled | default(true) }}"
+          loop: "{{ keycloak_realms }}"
+        - name: Create Keycloak User Federations
+          community.general.keycloak_user_federation:
+            auth_client_id: "{{ keycloak_common.client_id | default('admin-cli') }}"
+            auth_keycloak_url: "{{ keycloak_common.keycloak_url }}"
+            auth_realm: "{{ keycloak_common.realm }}"
+            auth_username: "{{ keycloak_common.username }}"
+            auth_password: "{{ keycloak_common.password }}"
+            validate_certs: "{{ keycloak_common.validate_certs | default(true) }}"
+            realm: "{{ item.realm }}"
+            name: "{{ item.name }}"
+            id: "{{ item.id | default(item.name) }}"
+            provider_id: "{{ item.provider_id }}"
+            provider_type: "{{ item.provider_type | default('org.keycloak.storage.UserStorageProvider') }}"
+            config:
+              authType: "{{ item.authType }}"
+              bindCredential: "{{ item.bindCredential }}"
+              bindDn: "{{ item.bindDn }}"
+              connectionUrl: "{{ item.connectionUrl }}"
+              editMode: "{{ item.editMode | default('READ_ONLY') }}"
+              enabled: "{{ item.enabled | default(true) }}"
+              importEnabled: "{{ item.importEnabled | default(true) }}"
+              pagination: "{{ item.pagination | default(true) }}"
+              priority: "{{ item.pagination | default(0) }}"
+              rdnLDAPAttribute: "{{ item.rdnLDAPAttribute | default('uid') }}"
+              searchScope: "{{ item.searchScope | default(1) }}"
+              syncRegistrations: "{{ item.syncRegistrations | default(false) }}"
+              trustEmail: "{{ item.trustEmail | default(false) }}"
+              userObjectClasses: "{{ item.userObjectClasses | default('inetOrgPerson, organizationalPerson') }}"
+              usernameLDAPAttribute: "{{ item.usernameLDAPAttribute | default('uid') }}"
+              usersDn: "{{ item.usersDn }}"
+              uuidLDAPAttribute: "{{ item.uuidLDAPAttribute | default('objectUUID') }}"
+              vendor: "{{ item.vendor | default('other') }}"
+            # mappers:
+            #   - name: "full name"
+            #     providerId: "full-name-ldap-mapper"
+            #     providerType: "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
+            #     config:
+            #       ldap.full.name.attribute: cn
+            #       read.only: true
+            #       write.only: false
+          loop: "{{ keycloak_user_federations }}"
+        - name: Create Keycloak Clients
+          community.general.keycloak_client:
+            auth_client_id: "{{ keycloak_common.client_id | default('admin-cli') }}"
+            auth_keycloak_url: "{{ keycloak_common.keycloak_url }}"
+            auth_realm: "{{ keycloak_common.realm }}"
+            auth_username: "{{ keycloak_common.username }}"
+            auth_password: "{{ keycloak_common.password }}"
+            validate_certs: "{{ keycloak_common.validate_certs | default(true) }}"
+            realm: "{{ item.realm }}"
+            id: "{{ item.id }}"
+            client_id: "{{ item.client_id | default(item.id) }}"
+            enabled: "{{ item.enabled | default(true) }}"
+            client_authenticator_type: "{{ item.client_authenticator_type | default('client-secret') }}"
+            protocol: "{{ item.protocol | default('openid-connect') }}"
+            base_url: "{{ item.base_url | default(omit) }}"
+            redirect_uris: "{{ item.redirect_uris | default(omit) }}"
+            secret: "{{ item.secret | default(omit) }}"
+          loop: "{{ keycloak_clients }}"
